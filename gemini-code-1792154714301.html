@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Crucial meta tag for iPhone/mobile scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>90-Day 5K Trainer</title>
+    <style>
+        /* iOS-style clean UI */
+        :root {
+            --primary: #007aff;
+            --bg: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-main: #1c1c1e;
+            --text-muted: #8e8e93;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 15px;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1 {
+            font-size: 24px;
+            margin-top: 0;
+            text-align: center;
+        }
+        .progress-container {
+            background-color: #e5e5ea;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            margin-bottom: 5px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background-color: var(--primary);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .routines {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .routines h3 { margin-top: 0; font-size: 18px; color: var(--primary); }
+        .routines ul { padding-left: 20px; font-size: 14px; margin-bottom: 0; }
+        .routines li { margin-bottom: 5px; }
+        
+        .week-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .week-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e5e5ea;
+            padding-bottom: 10px;
+        }
+        .day-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .day-row:last-child { margin-bottom: 0; }
+        
+        /* Custom large checkbox for mobile tapping */
+        input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border: 2px solid #c7c7cc;
+            border-radius: 50%;
+            margin-right: 15px;
+            margin-top: 2px;
+            outline: none;
+            flex-shrink: 0;
+        }
+        input[type="checkbox"]:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' width='18px' height='18px'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        .day-info { flex-grow: 1; }
+        .day-name { font-weight: bold; font-size: 16px; margin-bottom: 3px;}
+        .day-type { font-size: 12px; color: #ff9500; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        .day-type.distance { color: #34c759; }
+        .day-type.rest { color: var(--text-muted); }
+        .day-desc { font-size: 14px; color: var(--text-muted); line-height: 1.4; }
+        
+        .completed .day-name, .completed .day-desc {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>90-Day 5K Plan</h1>
+    
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">0 / 60 Workouts Completed</div>
+
+    <div class="routines">
+        <h3>Warm-Up & Cool-Down</h3>
+        <p style="font-size:14px; margin-top:0;"><strong>Before:</strong> 10 walking lunges/leg, 30s high knees, 30s butt kicks, 10 leg swings/leg. 3-5 min light jog.</p>
+        <p style="font-size:14px; margin-bottom:0;"><strong>After:</strong> 3-5 min walk. Static stretch for 30s each: calves, quads, hamstrings, hip flexors.</p>
+    </div>
+
+    <div id="planContainer"></div>
+
+    <script>
+        // Generate the 12-week plan data
+        const planData = [];
+        
+        for (let week = 1; week <= 12; week++) {
+            let phase = week <= 4 ? 1 : (week <= 8 ? 2 : 3);
+            let weekDays = [];
+            
+            if (phase === 1) {
+                let longRunDist = 2 + ((week - 1) * 0.25);
+                weekDays = [
+                    { id: `w${week}-1`, day: "Tuesday", type: "Speed", desc: "4 to 6 x 400m (1/4 mile) @ 8:30 pace. 2 min walk/jog recovery between sets." },
+                    { id: `w${week}-2`, day: "Wednesday", type: "Distance", desc: "1.5 to 2 miles easy @ 10:30 pace." },
+                    { id: `w${week}-3`, day: "Thursday", type: "Speed", desc: "Tempo: 1mi warm-up, 1mi @ 9:00 pace, 0.5mi cool-down." },
+                    { id: `w${week}-4`, day: "Saturday", type: "Distance", desc: `Long Run: ${longRunDist} miles slow @ 10:30+ pace.` },
+                    { id: `w${week}-5`, day: "Sunday", type: "Distance", desc: "Recovery: 1 mile very easy jog." }
+                ];
+            } else if (phase === 2) {
+                let tempoDist = week === 8 ? 2.0 : 1.5;
+                let longRunDist = 3 + ((week - 5) * 0.25);
+                if (week === 8) longRunDist = 4.0;
+                weekDays = [
+                    { id: `w${week}-1`, day: "Tuesday", type: "Speed", desc: "3 to 4 x 800m (1/2 mile) @ 8:00 pace. 2 min walk/jog recovery." },
+                    { id: `w${week}-2`, day: "Wednesday", type: "Distance", desc: "2 to 2.5 miles easy @ 10:30 pace." },
+                    { id: `w${week}-3`, day: "Thursday", type: "Speed", desc: `Tempo: 1mi warm-up, ${tempoDist}mi @ 8:30 pace, 0.5mi cool-down.` },
+                    { id: `w${week}-4`, day: "Saturday", type: "Distance", desc: `Long Run: ${longRunDist} miles slow @ 10:30+ pace.` },
+                    { id: `w${week}-5`, day: "Sunday", type: "Distance", desc: "Recovery: 1.5 miles very easy jog." }
+                ];
+            } else if (phase === 3) {
+                if (week < 12) {
+                    let longRunDist = 4.0 + ((week - 9) * 0.25);
+                    weekDays = [
+                        { id: `w${week}-1`, day: "Tuesday", type: "Speed", desc: "2 to 3 x 1 mile @ 8:00 pace. 3 min jog recovery." },
+                        { id: `w${week}-2`, day: "Wednesday", type: "Distance", desc: "3 miles easy @ 10:30 pace." },
+                        { id: `w${week}-3`, day: "Thursday", type: "Speed", desc: "Tempo: 1mi warm-up, 2.5mi @ 8:15 pace, 0.5mi cool-down." },
+                        { id: `w${week}-4`, day: "Saturday", type: "Distance", desc: `Long Run: ${longRunDist} miles slow & steady.` },
+                        { id: `w${week}-5`, day: "Sunday", type: "Distance", desc: "Recovery: 2 miles very easy." }
+                    ];
+                } else {
+                    // Race Week
+                    weekDays = [
+                        { id: `w${week}-1`, day: "Tuesday", type: "Speed", desc: "2 x 1 mile @ 8:00 pace. 3 min jog recovery." },
+                        { id: `w${week}-2`, day: "Wednesday", type: "Distance", desc: "3 miles easy @ 10:30 pace." },
+                        { id: `w${week}-3`, day: "Thursday", type: "Speed", desc: "Tempo: 1mi warm-up, 2.5mi @ 8:15 pace, 0.5mi cool-down." },
+                        { id: `w${week}-4`, day: "Saturday", type: "Distance", desc: "Shakeout: 2 miles very easy." },
+                        { id: `w${week}-5`, day: "Race Day", type: "Speed", desc: "5K RACE DAY! Target pace: 8:00/mile." }
+                    ];
+                }
+            }
+            planData.push({ week: week, title: `Week ${week} (Phase ${phase})`, days: weekDays });
+        }
+
+        const totalWorkouts = planData.reduce((acc, week) => acc + week.days.length, 0);
+        let completedWorkouts = JSON.parse(localStorage.getItem('5k-progress')) || {};
+
+        function renderPlan() {
+            const container = document.getElementById('planContainer');
+            
+            planData.forEach(week => {
+                const weekCard = document.createElement('div');
+                weekCard.className = 'week-card';
+                
+                const weekTitle = document.createElement('div');
+                weekTitle.className = 'week-title';
+                weekTitle.innerText = week.title;
+                weekCard.appendChild(weekTitle);
+                
+                week.days.forEach(day => {
+                    const isChecked = completedWorkouts[day.id] ? 'checked' : '';
+                    const isCompletedClass = isChecked ? 'completed' : '';
+                    const typeClass = day.type === 'Distance' ? 'distance' : 'speed';
+                    
+                    const dayHtml = `
+                        <div class="day-row ${isCompletedClass}" id="row-${day.id}">
+                            <input type="checkbox" id="${day.id}" ${isChecked} onchange="toggleWorkout('${day.id}')">
+                            <div class="day-info">
+                                <div class="day-name">${day.day}</div>
+                                <div class="day-type ${typeClass}">${day.type}</div>
+                                <div class="day-desc">${day.desc}</div>
+                            </div>
+                        </div>
+                    `;
+                    weekCard.insertAdjacentHTML('beforeend', dayHtml);
+                });
+                
+                container.appendChild(weekCard);
+            });
+            updateProgress();
+        }
+
+        function toggleWorkout(id) {
+            const checkbox = document.getElementById(id);
+            const row = document.getElementById(`row-${id}`);
+            
+            if (checkbox.checked) {
+                completedWorkouts[id] = true;
+                row.classList.add('completed');
+            } else {
+                delete completedWorkouts[id];
+                row.classList.remove('completed');
+            }
+            
+            localStorage.setItem('5k-progress', JSON.stringify(completedWorkouts));
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const completedCount = Object.keys(completedWorkouts).length;
+            const percentage = (completedCount / totalWorkouts) * 100;
+            
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').innerText = `${completedCount} / ${totalWorkouts} Workouts Completed`;
+        }
+
+        // Initialize App
+        window.onload = renderPlan;
+    </script>
+</body>
+</html>
